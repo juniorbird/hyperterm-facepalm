@@ -78,14 +78,18 @@ exports.decorateTerm = (Term, { React, notify }) => {
 
 		_createReaction () {
 			console.log('creating reaction!');
+			let winHeight = window.innerHeight;
+			let winWidth = window.innerWidth;
+			console.log('w', winWidth, 'h', winHeight);
 			this._reaction = document.createElement('div');
 			this._reaction.style.position = 'absolute';
-			this._reaction.style.top = 0;
-			this._reaction.style.left = 0;
-			this._reaction.width = window.innerWidth;
-			this._reaction.height = window.innerHeight;
+			this._reaction.style.bottom = 0;
+			this._reaction.style.right = 0;
+			this._reaction.style.width = '15%';
+			this._reaction.style.height = '15%';
 			this._reaction.textContent = 'Foo!Bar!!';
-			this._reaction.backgroundImage = 'url("https://media.giphy.com/media/zNrg4ulntLBMk/giphy.gif")';
+			this._reaction.style.backgroundImage = `url('https://media.giphy.com/media/zNrg4ulntLBMk/giphy.gif')`;
+			this._reaction.style.backgroundSize = '100% 100%';
 			document.body.appendChild(this._reaction);
 			console.log('child appended!');
 		};
