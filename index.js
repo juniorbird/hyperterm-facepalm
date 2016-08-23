@@ -3,8 +3,6 @@
 /*
 First, capture if the user has typed a typo
 If so, dispatch an action that says "d'oh!"
-(Don't dispatch the original one, that one
-provided no value and now is done)
 */
 exports.middleware = (store) => (next) => (action) => {
 	if ('SESSION_ADD_DATA' === action.type) {
@@ -37,15 +35,12 @@ and then things are looking great!
 exports.reduceUI = (state, action) => {
 	switch (action.type) {
 		case 'FACEPALM_MODE_ON':
-			console.log('on', state);
 			return state.set('facepalmMode', true);
 		case 'FACEPALM_MODE_OFF':
 			// delete state.facepalmMode;
 			return state.set('facepalmMode', false);
-			console.log('off', state);
 			return state;
 		default:
-			console.log('default', state);
 			return state;
 	}
 	return state;
@@ -71,6 +66,10 @@ exports.getTermProps = (uid, parentProps, props) => {
 	});
 };
 
+/*
+We decorate the Terminal that the user is typing in with a child
+Only if we have the facepalmMode prop active does the screen go wild
+*/
 exports.decorateTerm = (Term, { React, notify }) => {
 
 	return class extends React.Component {
@@ -79,9 +78,6 @@ exports.decorateTerm = (Term, { React, notify }) => {
 		}
 
 		render () {
-			let viz = this.props.facepalmMode
-			console.log('viz', viz);
-
 			let facepalmStyle = {
 				position: 'absolute',
 				bottom: 0,
@@ -93,9 +89,9 @@ exports.decorateTerm = (Term, { React, notify }) => {
 				visibility: 'visible',
 			};
 
-			this.props.customChildren = (viz) ? React.createElement('div', { style: facepalmStyle, className: "facepalm" }, '') : null;
+			let facepalmDiv = React.createElement('div', { style: facepalmStyle, className: "facepalm" }, '');
 
-			console.log('ccs', this.props.customChildren);
+			this.props.customChildren = (this.props.facepalmMode) ? facepalmDiv : null;
 
 		  return (
 				React.createElement(Term, Object.assign(Term, this.props))
