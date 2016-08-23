@@ -10,10 +10,17 @@ exports.middleware = (store) => (next) => (action) => {
 	if ('SESSION_ADD_DATA' === action.type) {
 		const { data } = action;
 		if (/(.*: command not found)|(command not found: .*)/.test(data)) {
-			store.dispatch({
-				type: 'FACEPALM_MODE_TOGGLE'
-			});
 			console.log('typo!');
+			store.dispatch({
+				type: 'FACEPALM_MODE_ON'
+			});
+			next(action);
+		} else if (action.data.length === 1) {
+			console.log('len = 1');
+			store.dispatch({
+				type: 'FACEPALM_MODE_OFF'
+			});
+			next(action);
 		} else {
 			next(action);
 		}
@@ -30,9 +37,17 @@ and then things are looking great!
 */
 exports.reduceUI = (state, action) => {
 	switch (action.type) {
-		case 'FACEPALM_MODE_TOGGLE':
-			console.log('facepalm mode set');
-			return state.set('facepalmMode', 'true');
+		case 'FACEPALM_MODE_ON':
+			console.log('on', state);
+			return state.set('facepalmMode', true);
+		case 'FACEPALM_MODE_OFF':
+			delete state.facepalmMode;
+			console.log('off', state);
+			return state;
+		default:
+			console.log('default', state);
+			// delete state.facepalmMode;
+			return state;
 	}
 	return state;
 };
@@ -42,10 +57,12 @@ Now we pass it down to the Term
 component that will send the burn
 */
 exports.mapTermsState = (state, map) => {
-	console.log('mapped!');
-	return Object.assign(map, {
-		facepalmMode: state.ui.facepalmMode
-	});
+	if (state.hasOwnProperty('facepalmMode')) {
+		return Object.assign(map, {
+			facepalmMode: state.ui.facepalmMode
+		});
+	}
+	return Object.assign(map, {});
 };
 
 /*
@@ -53,10 +70,12 @@ Sadly the final terminal to style is in an iFrame
 Passing down through props is the way to make it the same
 */
 exports.getTermProps = (uid, parentProps, props) => {
-	console.log('props gotten!');
-	return Object.assign(props, {
-		facepalmMode: parentProps.facepalmMode
-	});
+	if (parentProps.hasOwnProperty('facepalmMode')) {
+		return Object.assign(props, {
+			facepalmMode: parentProps.facepalmMode
+		});
+	}
+	return Object.assign(props, {});
 };
 
 exports.decorateTerm = (Term, { React, notify }) => {
@@ -65,22 +84,26 @@ exports.decorateTerm = (Term, { React, notify }) => {
 			super(props, context);
 			this._createReaction = this._createReaction.bind(this);
 			this._onTerminal = this._onTerminal.bind(this);
-			console.log('created!');
+			this._showReaction = this._showReaction.bind(this);
 		}
 
 		_onTerminal (term) {
-			console.log('onTerminal!');
 			if (this.props.onTerminal) this.props.onTerminal(term);
-			this._div = term.div_;
-			this._window = term.document_.defaultView;
+			console.log('term fpm', this.props.facepalmMode);
 			this._createReaction();
+			this._showReaction();
+		}
+
+		_showReaction () {
+			console.log('sr', this.props);
+			let viz = this.props.hasOwnProperty('facepalmMode') ? 'visible' : 'hidden';
+			this._reaction.style.visibility = viz;
 		}
 
 		_createReaction () {
-			console.log('creating reaction!');
-			let winHeight = window.innerHeight;
-			let winWidth = window.innerWidth;
-			console.log('w', winWidth, 'h', winHeight);
+			console.log('rfpm', this.props.facepalmMode);
+			// let viz = this.props.facepalmMode ? 'visible' : 'hidden';
+			// console.log('viz', viz);
 			this._reaction = document.createElement('div');
 			this._reaction.style.position = 'absolute';
 			this._reaction.style.bottom = 0;
@@ -90,31 +113,18 @@ exports.decorateTerm = (Term, { React, notify }) => {
 			this._reaction.textContent = 'Foo!Bar!!';
 			this._reaction.style.backgroundImage = `url('https://media.giphy.com/media/zNrg4ulntLBMk/giphy.gif')`;
 			this._reaction.style.backgroundSize = '100% 100%';
+			// this._reaction.style.visibility = viz;
 			document.body.appendChild(this._reaction);
-			console.log('child appended!');
+			this._showReaction();
 		};
 
-		componentWillReceiveProps (next) {
-			if (next.facepalmMode || this.props.facepalmMode) {
-				console.log('facepalm such on');
-			}
-		}
-
-		shouldComponentUpdate (next) {
-			console.log('shd update');
-		}
-
-		componentWillUpdate (next) {
-			console.log('will update');
-		}
-
 		componentWillUnmount () {
-			console.log('unmounted');
 			document.body.removeChild(this._reaction);
 		}
 
 		render () {
-			console.log('rendered!');
+			console.log('render is', this.props);
+			// if (this.props.facepalmMode) this.forceUpdate();
 			return React.createElement(Term, Object.assign({}, this.props, {
 				onTerminal: this._onTerminal
 			}));
